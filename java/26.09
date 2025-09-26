@@ -1,0 +1,168 @@
+##бинарная куча
+
+import java.util.*;
+
+public class BinaryHeap {
+    private ArrayList<Integer> h = new ArrayList<>();
+
+    private int parent(int i){ return (i-1)/2; }
+    private int left(int i){ return 2*i+1; }
+    private int right(int i){ return 2*i+2; }
+
+    public void push(int val){
+        h.add(val);
+        int i = h.size()-1;
+        while(i>0 && h.get(i)<h.get(parent(i))){
+            Collections.swap(h, i, parent(i));
+            i = parent(i);
+        }
+    }
+
+    public int pop(){
+        if(h.isEmpty()) throw new RuntimeException("empty");
+        int ret = h.get(0);
+        h.set(0, h.get(h.size()-1));
+        h.remove(h.size()-1);
+        if(!h.isEmpty()) heapify(0);
+        return ret;
+    }
+
+    private void heapify(int i){
+        int l=left(i), r=right(i), smallest=i;
+        if(l<h.size() && h.get(l)<h.get(smallest)) smallest=l;
+        if(r<h.size() && h.get(r)<h.get(smallest)) smallest=r;
+        if(smallest!=i){
+            Collections.swap(h, i, smallest);
+            heapify(smallest);
+        }
+    }
+}
+##биномиальная куча
+class BNode {
+    int key, degree;
+    BNode parent, child, sibling;
+    BNode(int k){ key=k; degree=0; }
+}
+
+public class BinomialHeap {
+    private BNode head = null;
+
+    private BNode merge(BNode h1, BNode h2){
+        BNode dummy = new BNode(0), tail = dummy;
+        while(h1 != null && h2 != null){
+            if(h1.degree <= h2.degree){ tail.sibling = h1; h1 = h1.sibling; }
+            else { tail.sibling = h2; h2 = h2.sibling; }
+            tail = tail.sibling;
+        }
+        tail.sibling = (h1 != null) ? h1 : h2;
+        return dummy.sibling;
+    }
+
+    public void unionWith(BinomialHeap other){
+        head = merge(head, other.head);
+        if(head == null) return;
+        BNode prev = null, curr = head, next = curr.sibling;
+        while(next != null){
+            if(curr.degree != next.degree ||
+               (next.sibling != null && next.sibling.degree == curr.degree)){
+                prev = curr;
+                curr = next;
+            } else {
+                if(curr.key <= next.key){
+                    curr.sibling = next.sibling;
+                    next.parent = curr;
+                    next.sibling = curr.child;
+                    curr.child = next;
+                    curr.degree++;
+                } else {
+if(prev != null) prev.sibling = next;
+                    else head = next;
+                    curr.parent = next;
+                    curr.sibling = next.child;
+                    next.child = curr;
+                    next.degree++;
+                    curr = next;
+                }
+            }
+            next = curr.sibling;
+        }
+    }
+
+    public void insert(int key){
+        BinomialHeap tmp = new BinomialHeap();
+        tmp.head = new BNode(key);
+        unionWith(tmp);
+    }
+}
+
+##куча Фибоначчи
+class FNode {
+    int key, degree;
+    boolean mark;
+    FNode parent, child, left, right;
+    FNode(int k){
+        key=k; degree=0; mark=false;
+        parent=child=null;
+        left=right=this;
+    }
+}
+
+public class FibonacciHeap {
+    private FNode min = null;
+    private int n = 0;
+
+    public FNode insert(int key){
+        FNode x = new FNode(key);
+        if(min == null) min = x;
+        else{
+            x.right = min.right;
+            x.left = min;
+            min.right.left = x;
+            min.right = x;
+            if(x.key < min.key) min = x;
+        }
+        n++;
+        return x;
+    }
+
+    public Integer findMin(){
+        return (min == null) ? null : min.key;
+    }
+}
+
+##хеш-таблица
+import java.util.*;
+
+public class HashTableChain<K,V> {
+    private ArrayList<LinkedList<Entry<K,V>>> table;
+    private int capacity;
+
+    private static class Entry<K,V>{
+        K key; V value;
+        Entry(K k,V v){ key=k; value=v; }
+    }
+
+    public HashTableChain(int cap){
+        capacity = cap;
+        table = new ArrayList<>(cap);
+        for(int i=0;i<cap;i++) table.add(new LinkedList<>());
+    }
+
+    private int hash(K key){ return Math.abs(key.hashCode()) % capacity; }
+
+    public void put(K key, V value){
+        int idx = hash(key);
+        for(Entry<K,V> e : table.get(idx)){
+            if(e.key.equals(key)){ e.value = value; return; }
+        }
+        table.get(idx).add(new Entry<>(key,value));
+    }
+
+    public V get(K key){
+        int idx = hash(key);
+        for(Entry<K,V> e : table.get(idx)){
+            if(e.key.equals(key)) return e.value;
+        }
+        throw new NoSuchElementException();
+    }
+}
