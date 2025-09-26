@@ -1,0 +1,150 @@
+//бинарная куча
+#include <bits/stdc++.h>
+using namespace std;
+
+class BinaryHeap {
+    vector<int> h;
+    int parent(int i){ return (i-1)/2; }
+    int left(int i){ return 2*i+1; }
+    int right(int i){ return 2*i+2; }
+
+    void heapify(int i){
+        int l=left(i), r=right(i), smallest=i;
+        if(l<h.size() && h[l]<h[smallest]) smallest=l;
+        if(r<h.size() && h[r]<h[smallest]) smallest=r;
+        if(smallest!=i){ swap(h[i],h[smallest]); heapify(smallest); }
+    }
+public:
+    void push(int val){
+        h.push_back(val);
+        int i=h.size()-1;
+        while(i>0 && h[i]<h[parent(i)]){
+            swap(h[i],h[parent(i)]);
+            i=parent(i);
+        }
+    }
+    int pop(){
+        if(h.empty()) throw runtime_error("empty");
+        int ret=h[0];
+        h[0]=h.back(); h.pop_back();
+        if(!h.empty()) heapify(0);
+        return ret;
+    }
+};
+
+//биномиальная куча
+// binomial_heap.cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+struct Node {
+    int key, degree;
+    Node *parent, *child, *sibling;
+    Node(int k):key(k),degree(0),parent(NULL),child(NULL),sibling(NULL){}
+};
+
+class BinomialHeap {
+    Node* head=nullptr;
+
+    Node* mergeRoots(Node* h1, Node* h2){
+        Node dummy(0); Node* tail=&dummy;
+        while(h1 && h2){
+            if(h1->degree <= h2->degree){ tail->sibling=h1; h1=h1->sibling; }
+            else { tail->sibling=h2; h2=h2->sibling; }
+            tail=tail->sibling;
+        }
+        tail->sibling = h1? h1: h2;
+        return dummy.sibling;
+    }
+
+public:
+    void unionWith(BinomialHeap& other){
+        head = mergeRoots(head, other.head);
+        if(!head) return;
+        Node* prev=nullptr;
+        Node* curr=head;
+        Node* next=curr->sibling;
+        while(next){
+            if(curr->degree!=next->degree ||
+               (next->sibling && next->sibling->degree==curr->degree)){
+                prev=curr; curr=next;
+            }else{
+                if(curr->key <= next->key){
+                    curr->sibling=next->sibling;
+                    next->parent=curr;
+                    next->sibling=curr->child;
+                    curr->child=next;
+                    curr->degree++;
+                }else{
+                    if(prev) prev->sibling=next;
+                    else head=next;
+                    curr->parent=next;
+                    curr->sibling=next->child;
+                    next->child=curr;
+                    next->degree++;
+                    curr=next;
+                }
+            }
+            next=curr->sibling;
+        }
+    }
+    void insert(int key){
+        BinomialHeap tmp;
+        tmp.head=new Node(key);
+        unionWith(tmp);
+    }
+}
+//куча Фибоначчи
+#include <bits/stdc++.h>
+using namespace std;
+
+struct FNode{
+    int key, degree;
+    bool mark;
+    FNode *parent, *child, *left, *right;
+    FNode(int k):key(k),degree(0),mark(false){
+        parent=child=NULL;
+        left=right=this;
+    }
+};
+
+class FibonacciHeap{
+    FNode* minNode=nullptr;
+    int n=0;
+public:
+    FNode* insert(int key){
+        FNode* x=new FNode(key);
+        if(!minNode) minNode=x;
+        else{
+            x->right=minNode->right;
+            x->left=minNode;
+            minNode->right->left=x;
+            minNode->right=x;
+            if(x->key < minNode->key) minNode=x;
+        }
+        n++;
+        return x;
+    }
+    int findMin(){ if(!minNode) throw runtime_error("empty"); return minNode->key; }
+}
+//хеш-таблица
+#include <bits/stdc++.h>
+using namespace std;
+
+class HashTable {
+    vector<list<pair<string,int>>> table;
+    size_t cap;
+    size_t _hash(const string& k){ return std::hash<string>()(k) % cap; }
+public:
+    HashTable(size_t c=16):cap(c),table(c){}
+    void put(const string& key,int val){
+        auto &lst = table[_hash(key)];
+        for(auto &p: lst) if(p.first==key){ p.second=val; return; }
+        lst.push_back({key,val});
+    }
+    int get(const string& key){
+        auto &lst = table[_hash(key)];
+        for(auto &p: lst) if(p.first==key) return p.second;
+        throw runtime_error("Key not found");
+    }
+}
